@@ -43,7 +43,4 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: https://sonarcloud.io
-        with:
-          args: >
-            -Dsonar.projectKey=mekniamal_SAGE
-            -Dsonar.organization=mekniamal
+          SONAR_PROJECT_BASE_DIR: ${{ github.workspace }}
