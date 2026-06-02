@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Diagrammes UML — E-commerce Laravel</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        :root {
+            --bg: #ffffff;
+            --text: #1a1a1a;
+            --muted: #555555;
+            --border: #e5e5e5;
+            --accent: #4a5d4a;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            padding: 2rem 2.5rem 3rem;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.5;
+            font-size: 11pt;
+        }
+        h1 {
+            font-size: 22pt;
+            color: var(--accent);
+            border-bottom: 2px solid var(--accent);
+            padding-bottom: 0.5rem;
+            margin-bottom: 0.25rem;
+        }
+        .subtitle {
+            color: var(--muted);
+            margin-bottom: 2rem;
+            font-size: 10pt;
+        }
+        h2 {
+            font-size: 14pt;
+            color: var(--accent);
+            margin-top: 2rem;
+            margin-bottom: 0.75rem;
+            page-break-after: avoid;
+        }
+        h3 {
+            font-size: 11pt;
+            color: var(--text);
+            margin: 1rem 0 0.5rem;
+        }
+        p, li { color: var(--text); }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0 1.5rem;
+            font-size: 9.5pt;
+        }
+        th, td {
+            border: 1px solid var(--border);
+            padding: 0.45rem 0.6rem;
+            text-align: left;
+        }
+        th { background: #f5f5f0; font-weight: 600; }
+        .diagram {
+            background: #fafafa;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 1rem;
+            margin: 1rem 0 1.5rem;
+            overflow-x: auto;
+            page-break-inside: avoid;
+        }
+        .mermaid { background: transparent !important; }
+        .page-break { page-break-before: always; }
+        @media print {
+            body { padding: 1cm; }
+            .diagram { background: #fff; border-color: #ccc; }
+        }
+    </style>
+</head>
+<body>
+
+<h1>Diagrammes UML — Projet E-commerce</h1>
+<p class="subtitle">Laravel · Boutique en ligne · Modèles, cas d'utilisation, séquences · {{ date }}</p>
+
+<h2>1. Diagramme de classes — Modèles</h2>
+<div class="diagram mermaid">
+classDiagram
+    class User {
+        +int id
+        +string name
+        +string email
+        +string password
+        +enum role
+        +orders()
+        +chatMessages()
+        +isAdmin() bool
+    }
+    class Category {
+        +int id
+        +string name
+        +string slug
+        +products()
+    }
+    class Product {
+        +int id
+        +int category_id
+        +string name
+        +decimal price
+        +int stock
+        +category()
+        +orderItems()
+    }
+    class Order {
+        +int id
+        +int user_id
+        +decimal total
+        +enum status
+        +user()
+        +items()
+    }
+    class OrderItem {
+        +int order_id
+        +int product_id
+        +int quantity
+        +decimal price
+    }
+    class ChatMessage {
+        +int user_id
+        +enum role
+        +text message
+    }
+    User "1" --> "*" Order
+    User "1" --> "*" ChatMessage
+    Category "1" --> "*" Product
+    Order "1" --> "*" OrderItem
+    Product "1" --> "*" OrderItem
+</div>
+
+<h2>2. Diagramme de classes — Contrôleurs</h2>
+<div class="diagram mermaid">
+classDiagram
+    class Controller {
+        &lt;&lt;abstract&gt;&gt;
+    }
+    class ProductController {
+        +shop()
+        +show()
+        +index() store() update() destroy()
+    }
+    class CartController {
+        +index() add() update() remove()
+    }
+    class OrderController {
+        +checkout() store() show()
+        +adminList() adminShow()
+    }
+    class AdminController {
+        +login() dashboard() logout()
+    }
+    class IsAdmin {
+        +handle()
+    }
+    Controller <|-- ProductController
+    Controller <|-- CartController
+    Controller <|-- OrderController
+    Controller <|-- AdminController
+    CartController ..> Product : lit
+    OrderController ..> Order : crée
+    IsAdmin ..> User : vérifie role
+</div>
+
+<div class="page-break"></div>
+
+<h2>3. Diagramme de cas d'utilisation</h2>
+<div class="diagram mermaid">
+flowchart LR
+    subgraph Acteurs
+        V((Visiteur))
+        C((Client))
+        A((Admin))
+    end
+    subgraph Public
+        UC1[Catalogue]
+        UC2[Inscription]
+        UC3[Login client]
+    end
+    subgraph ClientZone
+        UC4[Panier]
+        UC5[Commander]
+        UC6[Mes commandes]
+        UC7[Chat IA]
+        UC8[Profil]
+    end
+    subgraph AdminZone
+        UC9[Login admin]
+        UC10[Dashboard]
+        UC11[Gérer produits]
+        UC12[Gérer catégories]
+        UC13[Voir commandes]
+    end
+    V --> UC1
+    V --> UC2
+    V --> UC3
+    V --> UC9
+    C --> UC1
+    C --> UC4
+    C --> UC5
+    C --> UC6
+    C --> UC7
+    C --> UC8
+    A --> UC9
+    A --> UC10
+    A --> UC11
+    A --> UC12
+    A --> UC13
+</div>
+
+<h2>4. Séquence — Connexion admin</h2>
+<div class="diagram mermaid">
+sequenceDiagram
+    actor Admin
+    participant Browser
+    participant AdminController
+    participant Auth
+    participant User
+    Admin->>Browser: POST /admin/login
+    Browser->>AdminController: login()
+    AdminController->>Auth: attempt()
+    Auth->>User: vérifier
+    alt role admin
+        AdminController->>Browser: redirect dashboard
+    else role client
+        AdminController->>Auth: logout()
+        AdminController->>Browser: erreur accès refusé
+    end
+</div>
+
+<div class="page-break"></div>
+
+<h2>5. Séquence — Panier et commande</h2>
+<div class="diagram mermaid">
+sequenceDiagram
+    actor Client
+    participant CartController
+    participant Session
+    participant OrderController
+    participant Order
+    participant Product
+    Client->>CartController: add(product)
+    CartController->>Product: vérifier stock
+    CartController->>Session: put cart
+    Client->>OrderController: store()
+    OrderController->>Order: create
+    OrderController->>Session: forget cart
+    OrderController->>Client: confirmation
+</div>
+
+<h2>6. Séquence — Admin crée un produit</h2>
+<div class="diagram mermaid">
+sequenceDiagram
+    actor Admin
+    participant Middleware
+    participant ProductController
+    participant Product
+    participant Storage
+    Admin->>Middleware: auth + is.admin
+    Middleware-->>ProductController: OK
+    Admin->>ProductController: store()
+    ProductController->>Storage: image
+    ProductController->>Product: create
+    ProductController->>Admin: redirect liste
+</div>
+
+<h2>7. Architecture globale</h2>
+<div class="diagram mermaid">
+flowchart TB
+    subgraph Presentation
+        Views[Views Blade]
+    end
+    subgraph Application
+        Routes[Routes]
+        Controllers[Controllers]
+        MW[Middleware]
+    end
+    subgraph Domaine
+        Models[Models Eloquent]
+    end
+    subgraph Infra
+        DB[(MySQL)]
+        Sess[Session panier]
+        API[API Groq Chat]
+    end
+    Views --> Controllers
+    Routes --> MW --> Controllers
+    Controllers --> Models
+    Controllers --> Sess
+    Controllers --> API
+    Models --> DB
+</div>
+
+<h2>8. Référence des routes principales</h2>
+<table>
+    <tr><th>URL</th><th>Acteur</th><th>Rôle</th></tr>
+    <tr><td>/, /shop, /product/{slug}</td><td>Tous</td><td>Catalogue public</td></tr>
+    <tr><td>/login, /register</td><td>Visiteur</td><td>Auth client (Breeze)</td></tr>
+    <tr><td>/cart, /orders/*, /chat</td><td>Client</td><td>middleware auth</td></tr>
+    <tr><td>/admin/login</td><td>Admin</td><td>Connexion admin</td></tr>
+    <tr><td>/admin/dashboard, /admin/products…</td><td>Admin</td><td>auth + is.admin</td></tr>
+</table>
+
+<script>
+    document.querySelector('.subtitle').textContent =
+        document.querySelector('.subtitle').textContent.replace('{{ date }}', new Date().toLocaleDateString('fr-FR'));
+
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#e8efe8',
+            primaryTextColor: '#1a1a1a',
+            primaryBorderColor: '#4a5d4a',
+            lineColor: '#4a5d4a',
+            secondaryColor: '#f5f5f0',
+            tertiaryColor: '#ffffff',
+            background: '#ffffff',
+            mainBkg: '#e8efe8',
+            nodeBorder: '#4a5d4a',
+            clusterBkg: '#f9f9f7',
+            titleColor: '#1a1a1a',
+            actorBorder: '#4a5d4a',
+            actorBkg: '#e8efe8',
+            actorTextColor: '#1a1a1a',
+            signalColor: '#333333',
+            labelBoxBkgColor: '#e8efe8',
+            labelBoxBorderColor: '#4a5d4a',
+            labelTextColor: '#1a1a1a',
+            loopTextColor: '#1a1a1a',
+            noteBkgColor: '#fff9e6',
+            noteTextColor: '#1a1a1a',
+            noteBorderColor: '#cccccc'
+        },
+        flowchart: { htmlLabels: true, curve: 'basis' },
+        securityLevel: 'loose'
+    });
+</script>
+</body>
+</html>
