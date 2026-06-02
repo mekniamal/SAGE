@@ -43,7 +43,13 @@ Créer un admin : `role = admin` dans la table `users`, ou seeder `DatabaseSeede
 php artisan test
 ```
 
-Les tests mockent l'API Groq (pas d'appel réel).
+Couverture (nécessite l’extension PHP **PCOV** ou **Xdebug**) :
+
+```bash
+php artisan test --coverage --min=80
+```
+
+Les tests mockent l'API Groq (pas d'appel réel). Rapport HTML : `build/coverage/`.
 
 ## Structure
 

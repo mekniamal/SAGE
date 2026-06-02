@@ -79,4 +79,27 @@ class CartControllerTest extends TestCase
         $response = $this->get('/cart');
         $response->assertRedirect('/login');
     }
+
+    public function test_cannot_add_out_of_stock_product(): void
+    {
+        $this->product->update(['stock' => 0]);
+
+        $response = $this->actingAs($this->user)
+            ->post('/cart/add/'.$this->product->id);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('error');
+        $this->assertEmpty(session('cart', []));
+    }
+
+    public function test_user_can_update_cart_quantity(): void
+    {
+        $this->actingAs($this->user)->post('/cart/add/'.$this->product->id);
+
+        $response = $this->actingAs($this->user)
+            ->patch(route('cart.update', $this->product), ['quantity' => 3]);
+
+        $response->assertRedirect();
+        $this->assertEquals(3, session('cart')[$this->product->id]['quantity']);
+    }
 }

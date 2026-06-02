@@ -8,6 +8,7 @@ use App\Models\Product;
 use App\Models\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class ChatService
 {
@@ -105,13 +106,29 @@ class ChatService
                 ]);
 
             if (! $response->successful()) {
-                return 'Le service IA est temporairement indisponible. Réessayez plus tard.';
+                Log::warning('Groq API error', [
+                    'status' => $response->status(),
+                    'body' => $response->json() ?? $response->body(),
+                ]);
+
+                return $this->failureMessage($response->status());
             }
 
             return $response->json('choices.0.message.content')
                 ?? 'Désolé, je n\'ai pas pu générer une réponse.';
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            Log::warning('Groq API exception', ['message' => $e->getMessage()]);
+
             return 'Le service IA est temporairement indisponible. Réessayez plus tard.';
         }
+    }
+
+    private function failureMessage(int $status): string
+    {
+        return match (true) {
+            $status === 401 => 'Clé API Groq invalide ou expirée. Vérifiez GROQ_API_KEY dans le fichier .env.',
+            $status === 429 => 'Limite de requêtes Groq atteinte. Patientez une minute puis réessayez.',
+            default => 'Le service IA est temporairement indisponible. Réessayez plus tard.',
+        };
     }
 }

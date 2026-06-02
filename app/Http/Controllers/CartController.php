@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\UpdateCartRequest;
 use App\Models\Product;
-use Illuminate\Http\Request;
 
 class CartController extends Controller
 {
@@ -17,7 +17,7 @@ class CartController extends Controller
         return view('cart.index', compact('cart', 'total'));
     }
 
-    public function add(Request $request, Product $product)
+    public function add(Product $product)
     {
         if ($product->stock <= 0) {
             return back()->with('error', 'Ce produit est en rupture de stock !');
@@ -45,16 +45,17 @@ class CartController extends Controller
         return back()->with('success', 'Produit ajouté au panier !');
     }
 
-    public function update(Request $request, Product $product)
+    public function update(UpdateCartRequest $request, Product $product)
     {
+        $quantity = (int) $request->validated('quantity');
         $cart = session()->get('cart', []);
         $id   = $product->id;
 
         if (isset($cart[$id])) {
-            if ($request->quantity <= 0) {
+            if ($quantity <= 0) {
                 unset($cart[$id]);
             } else {
-                $cart[$id]['quantity'] = min($request->quantity, $product->stock);
+                $cart[$id]['quantity'] = min($quantity, $product->stock);
             }
             session()->put('cart', $cart);
         }

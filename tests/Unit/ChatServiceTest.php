@@ -71,4 +71,40 @@ class ChatServiceTest extends TestCase
 
         $this->assertStringContainsString('indisponible', $reply);
     }
+
+    public function test_ask_without_api_key_returns_configuration_message(): void
+    {
+        config(['services.groq.key' => null]);
+
+        $service = new ChatService;
+        $reply = $service->ask([['role' => 'user', 'content' => 'Bonjour']]);
+
+        $this->assertStringContainsString('GROQ_API_KEY', $reply);
+    }
+
+    public function test_save_messages_persist_to_database(): void
+    {
+        $user = User::factory()->create();
+        $service = new ChatService;
+
+        $service->saveUserMessage($user, 'Question test');
+        $service->saveAssistantMessage($user, 'Réponse test');
+
+        $this->assertDatabaseCount('chat_messages', 2);
+    }
+
+    public function test_build_api_messages_includes_history(): void
+    {
+        $user = User::factory()->create();
+        $service = new ChatService;
+
+        $service->saveUserMessage($user, 'Bonjour');
+        $service->saveAssistantMessage($user, 'Salut');
+
+        $messages = $service->buildApiMessages($user, 'Contexte système');
+
+        $this->assertEquals('system', $messages[0]['role']);
+        $this->assertEquals('Contexte système', $messages[0]['content']);
+        $this->assertGreaterThanOrEqual(3, count($messages));
+    }
 }

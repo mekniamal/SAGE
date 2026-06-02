@@ -109,4 +109,28 @@ class AdminControllerTest extends TestCase
         $response->assertRedirect('/shop');
         $this->assertGuest();
     }
+
+    public function test_admin_login_rejects_wrong_password(): void
+    {
+        $response = $this->post('/admin/login', [
+            'email' => 'admin@test.com',
+            'password' => 'wrong-password',
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('error');
+        $this->assertGuest();
+    }
+
+    public function test_admin_login_normalizes_email(): void
+    {
+        $this->admin->update(['email' => 'admin@test.com']);
+
+        $response = $this->post('/admin/login', [
+            'email' => '  ADMIN@TEST.COM  ',
+            'password' => 'password',
+        ]);
+
+        $response->assertRedirect('/admin/dashboard');
+    }
 }

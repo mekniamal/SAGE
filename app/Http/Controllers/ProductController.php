@@ -2,26 +2,29 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\ShopFilterRequest;
+use App\Http\Requests\StoreProductRequest;
+use App\Http\Requests\UpdateProductRequest;
 use App\Models\Product;
 use App\Models\Category;
 use App\Models\Order;
 use App\Models\User;
-use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
 class ProductController extends Controller
 {
     // Page boutique publique
-    public function shop(Request $request)
+    public function shop(ShopFilterRequest $request)
     {
+        $filters = $request->validated();
         $query = Product::with('category')->where('is_active', true);
 
-        if ($request->category) {
-            $query->whereHas('category', fn($q) => $q->where('slug', $request->category));
+        if (! empty($filters['category'])) {
+            $query->whereHas('category', fn ($q) => $q->where('slug', $filters['category']));
         }
 
-        if ($request->search) {
-            $query->where('name', 'like', '%' . $request->search . '%');
+        if (! empty($filters['search'])) {
+            $query->where('name', 'like', '%'.$filters['search'].'%');
         }
 
         $products   = $query->latest()->paginate(12);
@@ -38,7 +41,7 @@ class ProductController extends Controller
 
         $heroProduct = Product::where('is_active', true)->whereNotNull('image')->latest()->first();
 
-        $isFiltered = $request->filled('search') || $request->filled('category');
+        $isFiltered = ! empty($filters['search']) || ! empty($filters['category']);
 
         return view('shop.index', compact('products', 'categories', 'stats', 'heroProduct', 'isFiltered'));
     }
@@ -67,29 +70,22 @@ class ProductController extends Controller
     }
 
     // Admin - enregistrer
-    public function store(Request $request)
+    public function store(StoreProductRequest $request)
     {
-        $request->validate([
-            'name'        => 'required|string|max:255',
-            'category_id' => 'required|exists:categories,id',
-            'price'       => 'required|numeric|min:0',
-            'stock'       => 'required|integer|min:0',
-            'description' => 'nullable|string',
-            'image'       => 'nullable|image|max:2048',
-        ]);
-
+        $data = $request->validated();
         $imagePath = null;
+
         if ($request->hasFile('image')) {
             $imagePath = $request->file('image')->store('products', 'public');
         }
 
         Product::create([
-            'name'        => $request->name,
-            'slug'        => Str::slug($request->name),
-            'category_id' => $request->category_id,
-            'price'       => $request->price,
-            'stock'       => $request->stock,
-            'description' => $request->description,
+            'name'        => $data['name'],
+            'slug'        => Str::slug($data['name']),
+            'category_id' => $data['category_id'],
+            'price'       => $data['price'],
+            'stock'       => $data['stock'],
+            'description' => $data['description'] ?? null,
             'image'       => $imagePath,
             'is_active'   => $request->has('is_active'),
         ]);
@@ -106,29 +102,22 @@ class ProductController extends Controller
     }
 
     // Admin - mettre à jour
-    public function update(Request $request, Product $product)
+    public function update(UpdateProductRequest $request, Product $product)
     {
-        $request->validate([
-            'name'        => 'required|string|max:255',
-            'category_id' => 'required|exists:categories,id',
-            'price'       => 'required|numeric|min:0',
-            'stock'       => 'required|integer|min:0',
-            'description' => 'nullable|string',
-            'image'       => 'nullable|image|max:2048',
-        ]);
-
+        $data = $request->validated();
         $imagePath = $product->image;
+
         if ($request->hasFile('image')) {
             $imagePath = $request->file('image')->store('products', 'public');
         }
 
         $product->update([
-            'name'        => $request->name,
-            'slug'        => Str::slug($request->name),
-            'category_id' => $request->category_id,
-            'price'       => $request->price,
-            'stock'       => $request->stock,
-            'description' => $request->description,
+            'name'        => $data['name'],
+            'slug'        => Str::slug($data['name']),
+            'category_id' => $data['category_id'],
+            'price'       => $data['price'],
+            'stock'       => $data['stock'],
+            'description' => $data['description'] ?? null,
             'image'       => $imagePath,
             'is_active'   => $request->has('is_active'),
         ]);

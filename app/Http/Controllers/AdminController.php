@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Http\Requests\AdminLoginRequest;
 use Illuminate\Support\Facades\Auth;
 
 class AdminController extends Controller
@@ -17,16 +17,14 @@ class AdminController extends Controller
     }
 
     // Traiter la connexion admin
-    public function login(Request $request)
+    public function login(AdminLoginRequest $request)
     {
-        $request->validate([
-            'email' => 'required|email',
-            'password' => 'required|min:6',
-        ]);
+        $email = $request->validated('email');
 
-        $email = strtolower(trim($request->email));
-
-        if (Auth::attempt(['email' => $email, 'password' => $request->password], $request->boolean('remember'))) {
+        if (Auth::attempt(
+            ['email' => $email, 'password' => $request->validated('password')],
+            $request->boolean('remember')
+        )) {
             $user = auth()->user();
             
             if ($user->role !== 'admin') {

@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\ChatMessageRequest;
 use App\Services\ChatService;
-use Illuminate\Http\Request;
 
 class ChatController extends Controller
 {
@@ -22,13 +22,12 @@ class ChatController extends Controller
         return view('chat.index', compact('messages'));
     }
 
-    public function send(Request $request)
+    public function send(ChatMessageRequest $request)
     {
-        $request->validate(['message' => 'required|string|max:1000']);
-
         $user = auth()->user();
+        $message = $request->validated('message');
 
-        $this->chatService->saveUserMessage($user, $request->message);
+        $this->chatService->saveUserMessage($user, $message);
 
         $context = $this->chatService->buildBusinessContext($user);
         $apiMessages = $this->chatService->buildApiMessages($user, $context);

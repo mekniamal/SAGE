@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\CheckoutOrderRequest;
 use App\Models\Order;
 use App\Notifications\OrderConfirmed;
 use App\Services\OrderCheckoutService;
-use Illuminate\Http\Request;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class OrderController extends Controller
@@ -55,17 +55,15 @@ class OrderController extends Controller
         return view('orders.checkout', compact('cart', 'total'));
     }
 
-    public function store(Request $request)
+    public function store(CheckoutOrderRequest $request)
     {
-        $validated = $request->validate([
-            'address' => 'required|string|max:500',
-            'phone' => 'required|string|max:20',
-            'notes' => 'nullable|string',
-        ]);
-
         $cart = session()->get('cart', []);
 
-        $order = $this->checkoutService->placeOrder(auth()->user(), $cart, $validated);
+        $order = $this->checkoutService->placeOrder(
+            auth()->user(),
+            $cart,
+            $request->validated()
+        );
 
         session()->forget('cart');
 
